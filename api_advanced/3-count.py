@@ -1,42 +1,24 @@
 #!/usr/bin/python3
-"""Contains the count_words function"""
+'''
+module for the Reddit API
+'''
+
 import requests
 
 
-def count_words(subreddit, word_list, found_list=[], after=None):
-    '''Prints counts of given words found in hot posts of a given subreddit.
-    Args:
-        subreddit (str): The subreddit to search.
-        word_list (list): The list of words to search for in post titles.
-        found_list (obj): Key/value pairs of words/counts.
-        after (str): The parameter for the next page of the API results.
-    '''
-    user_agent = {'User-agent': 'test45'}
-    posts = requests.get('http://www.reddit.com/r/{}/hot.json?after={}'
-                         .format(subreddit, after), headers=user_agent)
-    if after is None:
-        word_list = [word.lower() for word in word_list]
-
-    if posts.status_code == 200:
-        posts = posts.json()['data']
-        aft = posts['after']
-        posts = posts['children']
-        for post in posts:
-            title = post['data']['title'].lower()
-            for word in title.split(' '):
-                if word in word_list:
-                    found_list.append(word)
-        if aft is not None:
-            count_words(subreddit, word_list, found_list, aft)
-        else:
-            result = {}
-            for word in found_list:
-                if word.lower() in result.keys():
-                    result[word.lower()] += 1
-                else:
-                    result[word.lower()] = 1
-            for key, value in sorted(result.items(), key=lambda item: item[1],
-                                     reverse=True):
-                print('{}: {}'.format(key, value))
-    else:
-        return
+def recurse(subreddit, hot_list=[], nxt=None):
+    '''function that recursively queries and returns the top 10 subscribers '''
+    headers = {'User-agent': 'test'}
+    res = requests.get("https://www.reddit.com/r/{}/hot.json?after={}"
+                       .format(subreddit, nxt), headers=headers)
+    try:
+        data = res.json()['data']
+    except Exception:
+        return None
+    nxt = data['after']
+    posts = data['children']
+    for post in posts:
+        hot_list.append(post['data']['title'])
+    if nxt:
+        recurse(subreddit, hot_list, nxt)
+    return hot_list
